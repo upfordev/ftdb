@@ -78,11 +78,11 @@ function mysql_revoke_ftdb_privileges {
 function mysql_grant_ftdb_privileges {
 	echo "Granting access privileges on $db to $FTDB_USER..."
 	mysql -u $mysql_root_u -p$mysql_root_p -e "GRANT select, show view, trigger, lock tables on $db.* to '$FTDB_USER'@'$DB_HOST'; flush privileges;"
-        if [ $? == 0 ]; then
-                echo "Access privileges granted"
-        else
-               	die "There was an error granting access privileges"
-       	fi
+		if [ $? == 0 ]; then
+				echo "Access privileges granted"
+		else
+				die "There was an error granting access privileges"
+		fi
 
 }
 
@@ -93,10 +93,10 @@ cat >$dir/$CFG_FILENAME <<EOL
 	mysql_db=${db}
 EOL
 	if [ $? == 0 ]; then
-                echo "Config file created"
-        else
-            	die "There was an error creating config file"
-        fi
+				echo "Config file created"
+		else
+				die "There was an error creating config file"
+		fi
 }
 
 # Remove project's config file
@@ -104,10 +104,10 @@ function remove_config_file {
 	echo "Removing project's config file..."
 	rm $dir/$CFG_FILENAME
 	if [ $? == 0 ]; then
-                echo "Config file removed"
-        else
-            	die "There was an error removing config file"
-        fi
+				echo "Config file removed"
+		else
+				die "There was an error removing config file"
+		fi
 }
 
 # Symlink project's executable to global executable
@@ -115,10 +115,10 @@ function create_symlink {
 	echo "Creating symlink in $dir..."
 	ln -s $DIR/$FILENAME $dir/$LN_FILENAME
 	if [ $? == 0 ]; then
-                echo "Symlink created"
-        else
-            	echo "There was an error creating symlink"
-        fi
+				echo "Symlink created"
+		else
+				echo "There was an error creating symlink"
+		fi
 }
 
 # Remove project's symlink to global executable
@@ -126,10 +126,10 @@ function remove_symlink {
 	echo "Removing symlink from $dir..."
 	rm $dir/$LN_FILENAME
 	if [ $? == 0 ]; then
-                echo "Symlink removed"
-        else
-            	echo "There was an removing symlink"
-       	fi
+				echo "Symlink removed"
+		else
+				echo "There was an removing symlink"
+		fi
 }
 
 # Set everything up for following a database
