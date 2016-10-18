@@ -171,6 +171,23 @@ function ftdb_dump {
 	echo "Done"
 }
 
+# Set permissions required for $user to run ftdb from $dir
+function ftdb_user_add {
+	echo "Setting up permissions for user $user to follow $dir..."
+	setfacl -m u:$user:rX $DIR/$FILENAME
+	setfacl -m u:$user:rX $dir
+	setfacl -d -m u:$user:rX $dir
+	echo "Done"
+}
+
+# Unset permissions required for $user to run ftdb from $dir
+function ftdb_user_remove {
+	echo "Removing permissions for user $user to follow $dir..."
+	setfacl -x $user $dir
+	setfacl -d -x $user $dir
+	echo "Done"
+}
+
 # Parse command options
 while [[ ${1} ]]; do
 	case "${1}" in
@@ -187,6 +204,12 @@ while [[ ${1} ]]; do
 		# dir into which we're writing the config file
 		--dir)
 			dir=${2}
+			shift
+			;;
+		# the user to/from which we're granting/removing permissions
+		# required for adduser or removeuser mode
+		--user)
+			user=${2}
 			shift
 			;;
 		# catch all for unknown options
@@ -210,6 +233,12 @@ else
 			;;
 		"unfollow")
 			ftdb_unfollow
+			;;
+		"adduser")
+			ftdb_user_add
+			;;
+		"removeuser")
+			ftdb_user_remove
 			;;
 		*)
 			echo 'Ivalid mode option value'
