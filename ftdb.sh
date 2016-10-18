@@ -1,0 +1,221 @@
+#!/bin/bash
+
+# We're running mysqldump as this user
+FTDB_USER='ftdb'
+# DB hostname
+DB_HOST='localhost'
+# Dir where the script is located, regardless of where it is executed from
+DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Name of this script
+FILENAME="$(basename "${BASH_SOURCE[0]}")"
+# Filename for the symlink to this script to be placed under the project's dir
+LN_FILENAME='ftdb'
+# Filename for the config file to be placed under the project's dir
+CFG_FILENAME='.ftdb.conf'
+
+# Prompt user for input. Read and print what the user inputted.
+function read_prompt {
+	# $1 what do we want from the user?
+	# $2 default value to be printed when nothing inputted
+	# $3 do not print input as typed, for password inputs
+	local message="$1" default="$2" silent="$3" var="" command="read "
+	if [ "$silent" == 'silent' ]; then command="$command -s"; fi
+	$command -p "$message" var
+	if [ -z "$var" ]; then var="$default"; fi
+	echo "$var"
+}
+
+# Echo $1 and exit
+function die {
+	echo "$1"
+	exit 1
+}
+
+# Prompt user for mysql superuser credentials
+# Test connection, exit if can't connect
+function mysql_read_root_credentials {
+		mysql_root_u=$(read_prompt "Enter Mysql root username [root]: " "root")
+		mysql_root_p=$(read_prompt "Enter Mysql password for $mysql_root_u: " "" "silent")
+		echo -e "\nConnecting to local Mysql server as $mysql_root_u..."
+		mysql -u $mysql_root_u -p$mysql_root_p -e ";"
+		if [ $? == 0 ]; then
+			echo "Connection succeeded"
+		else
+			die "Connection failed"
+		fi
+}
+
+# Check for the existance of mysql user account we'll use to run ftdb
+# If it does not exist, create it. Exit if couldn't create
+function mysql_create_ftdb_user {
+		echo "Getting $FTDB_USER mysql account..."
+		local ftdb_user_count=$(mysql -u $mysql_root_u -p$mysql_root_p -s -N -e "select count(user) from mysql.user where user='$FTDB_USER' and host='$DB_HOST';")
+		if [ "$ftdb_user_count" == "0" ]; then
+			echo "$FTDB_USER mysql account doesn't exist. Creating it..."
+			mysql -u $mysql_root_u -p$mysql_root_p -e "create user '$FTDB_USER'@'localhost';"
+			if [ $? == 0 ]; then
+				echo "$FTDB_USER mysql account created"
+			else
+				die "$FTDB_USER account creation failed"
+			fi
+		else
+			echo "$FTDB_USER mysql account exists"
+		fi
+}
+
+# Revoke all access privileges on $db from $FTDB_USER
+function mysql_revoke_ftdb_privileges {
+	echo "Revoking access privileges on $db from $FTDB_USER..."
+	mysql -u $mysql_root_u -p$mysql_root_p -e "REVOKE ALL PRIVILEGES ON $db.* FROM '$FTDB_USER'@'$DB_HOST'; flush privileges;"
+	if [ $? == 0 ]; then
+		echo "Access privileges revoked"
+	else
+		echo "There was an error revoking access privileges"
+	fi
+}
+
+# Grant privileges required to run mysqldump on $db to $FTDB_USER
+function mysql_grant_ftdb_privileges {
+	echo "Granting access privileges on $db to $FTDB_USER..."
+	mysql -u $mysql_root_u -p$mysql_root_p -e "GRANT select, show view, trigger, lock tables on $db.* to '$FTDB_USER'@'$DB_HOST'; flush privileges;"
+        if [ $? == 0 ]; then
+                echo "Access privileges granted"
+        else
+               	die "There was an error granting access privileges"
+       	fi
+
+}
+
+# Write to project's config file
+function create_config_file {
+	echo "Creating project's config file..."
+cat >$dir/$CFG_FILENAME <<EOL
+	mysql_db=${db}
+EOL
+	if [ $? == 0 ]; then
+                echo "Config file created"
+        else
+            	die "There was an error creating config file"
+        fi
+}
+
+# Remove project's config file
+function remove_config_file {
+	echo "Removing project's config file..."
+	rm $dir/$CFG_FILENAME
+	if [ $? == 0 ]; then
+                echo "Config file removed"
+        else
+            	die "There was an error removing config file"
+        fi
+}
+
+# Symlink project's executable to global executable
+function create_symlink {
+	echo "Creating symlink in $dir..."
+	ln -s $DIR/$FILENAME $dir/$LN_FILENAME
+	if [ $? == 0 ]; then
+                echo "Symlink created"
+        else
+            	echo "There was an error creating symlink"
+        fi
+}
+
+# Remove project's symlink to global executable
+function remove_symlink {
+	echo "Removing symlink from $dir..."
+	rm $dir/$LN_FILENAME
+	if [ $? == 0 ]; then
+                echo "Symlink removed"
+        else
+            	echo "There was an removing symlink"
+       	fi
+}
+
+# Set everything up for following a database
+function ftdb_follow {
+	echo "Setting $dir to follow database $db..."
+	mysql_read_root_credentials
+	mysql_create_ftdb_user
+	mysql_grant_ftdb_privileges
+	create_config_file
+	create_symlink
+	echo "Done"
+}
+
+# Undo follow
+function ftdb_unfollow {
+	echo "Undoing follow on $dir to database $db..."
+	mysql_read_root_credentials
+	mysql_revoke_ftdb_privileges
+	remove_config_file
+	remove_symlink
+	echo "Done"
+}
+
+# Save database dump on user's home dir
+function ftdb_dump {
+	echo "Reading config..."
+	. $DIR/.ftdb.conf
+
+	echo "Creating local directory to store dumps ..."
+	output_dir=$HOME/.ftdb
+	mkdir -p $output_dir
+
+	echo "Dumping database $mysql_db..."
+	timestamp=$(date +%Y%m%d%H%M%S%N)
+	output_file=$output_dir/$mysql_db-$timestamp.sql
+	mysqldump -u $FTDB_USER $mysql_db > $output_file
+
+	echo "Database dump available at $output_file"
+	echo "Done"
+}
+
+# Parse command options
+while [[ ${1} ]]; do
+	case "${1}" in
+		# mode
+		--mode)
+			mode=${2}
+			shift
+			;;
+		# name of the database to follow
+		--db)
+			db=${2}
+			shift
+			;;
+		# dir into which we're writing the config file
+		--dir)
+			dir=${2}
+			shift
+			;;
+		# catch all for unknown options
+		*)
+			echo "Unknown parameter: ${1}" >&2
+	esac
+
+	if ! shift; then
+		echo 'Missing parameter argument.' >&2
+	fi
+done
+
+# Select entry point depending on mode
+if [ -z "$mode" ]; then
+	# no mode? then just dump
+	ftdb_dump
+else
+	case "$mode" in
+		"follow")
+			ftdb_follow
+			;;
+		"unfollow")
+			ftdb_unfollow
+			;;
+		*)
+			echo 'Ivalid mode option value'
+			exit 1
+			;;
+	esac
+fi
+
+exit 0
