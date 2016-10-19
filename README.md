@@ -64,7 +64,7 @@ Covers both server and client side tasks.
 
  The user can now re run the command above as many times as wanted to get the latest remote database copy mounted locally without any further server actions needed
 
-Server repeats step 1 any time it want to make a new database _"followable"_
+Server repeats step 1 any time it wants to make a new database _"followable"_
 
 Server repeats steps 2, 3 any time it wants to make a user able to _follow_ a _followable_ database
 
