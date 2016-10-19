@@ -80,6 +80,8 @@ Use _removeuser_ mode to undo changes made by _adduser_ mode:
 ##Footprints
 ###On the server
 - .ftdb directory created on home directory of every user that ran the client script at least once. Its purpose is just to temporarily store the database dump, which is removed after downloading to the client. Should be empty most of the time
+- MySql user created: 'ftdb'@'localhost'
+- MySql user granted permissions to run mysqldump on every _"followable"_ database (revoked on a per db basis using _"unfollow"_ mode)
 - [PROJECT\_DIR]/.ftdb.conf: config values read when the client script runs (removed using _"unfollow"_ mode)
 - [PROJECT\_DIR]/ftdb: symlink to /usr/local/bin/ftdb.sh (removed using _"unfollow"_ mode)
 - rX permissions on /usr/bin/local/ftdb.sh and [PROJECT\_DIR] for every user added via _"adduser"_ mode (removed using _"removeuser"_ mode)
