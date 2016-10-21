@@ -18,7 +18,7 @@ Covers both server and client side tasks.
 ###For the server
 1. Clone this repository
 2. `sudo cp ftdb/ftdb /usr/local/bin/`
-3. `sudo ln /usr/local/bin/ftdb /bin/ftdb`
+3. `sudo ln -s /usr/local/bin/ftdb /bin/ftdb`
 4. `sudo chmod 754 /usr/local/bin/ftdb`
 5. You're all set! (see workflow below)
 
