@@ -24,7 +24,7 @@ Covers both server and client side tasks.
 
 ###For the client
 1. Clone this repository
-2. `sudo chmod 754 ftdb/ftdb-client`
+2. `chmod 754 ftdb/ftdb-client`
 3. You're all set! Have your server admin set everything up for you to follow that database! (see workflow below)
 
 ##Basic workflow
