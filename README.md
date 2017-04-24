@@ -1,33 +1,33 @@
-#ftdb
-####Follow that DB!
+# ftdb
+#### Follow that DB!
 
 A couple of shell scripts to automate creating and downloading a MySql database dump from a remote server and importing such dump into a local database server.
 
 Covers both server and client side tasks.
 
-##Requirements
-###For the server
+## Requirements
+### For the server
 - sudo access
 - root local MySql access
 
-###For the client
+### For the client
 - password less ssh access to the remote server
 - root local MySql access
 
-##Installation
-###For the server
+## Installation
+### For the server
 1. Clone this repository
 2. `sudo cp ftdb/ftdb /usr/local/bin/`
 3. `sudo ln -s /usr/local/bin/ftdb /bin/ftdb`
 4. `sudo chmod 754 /usr/local/bin/ftdb`
 5. You're all set! (see workflow below)
 
-###For the client
+### For the client
 1. Clone this repository
 2. `chmod 754 ftdb/ftdb-client`
 3. You're all set! Have your server admin set everything up for you to follow that database! (see workflow below)
 
-##Basic workflow
+## Basic workflow
 1. Server sets up a database as _"followable"_ (is prompted for MySql root credentials)
 
  `ftdb --mode follow --db [DB_NAME] --dir [PROJECT_DIR]`
@@ -68,7 +68,7 @@ Server repeats step 1 any time it wants to make a new database _"followable"_
 
 Server repeats steps 2, 3 any time it wants to make a user able to _follow_ a _followable_ database
 
-##Undoing server changes
+## Undoing server changes
 Use _unfollow_ mode to undo changes made by _follow_ mode (prompts for MySql root credentials):
 
 `ftdb --mode unfollow --db [DB_NAME] --dir [PROJECT_DIR]`
@@ -77,8 +77,8 @@ Use _removeuser_ mode to undo changes made by _adduser_ mode:
 
 `sudo ftdb --mode removeuser --user [USER_NAME] --dir [PROJECT_DIR]`
 
-##Footprints
-###On the server
+## Footprints
+### On the server
 - .ftdb directory created on home directory of every user that ran the client script at least once. Its purpose is just to temporarily store the database dump, which is removed after downloading to the client. Should be empty most of the time
 - MySql user created: 'ftdb'@'localhost'
 - MySql user granted permissions to run mysqldump on every _"followable"_ database (revoked on a per db basis using _"unfollow"_ mode)
@@ -86,7 +86,7 @@ Use _removeuser_ mode to undo changes made by _adduser_ mode:
 - [PROJECT\_DIR]/ftdb: symlink to /usr/local/bin/ftdb (removed using _"unfollow"_ mode)
 - rX permissions on /usr/bin/local/ftdb and [PROJECT\_DIR] for every user added via _"adduser"_ mode (removed using _"removeuser"_ mode)
 
-###On the client
+### On the client
 - .ftdb directory created on user's home directory storing each dump downloaded from the server with filenames of the form
 
  `[DB_NAME]-[TIMESTAMP].sql`
